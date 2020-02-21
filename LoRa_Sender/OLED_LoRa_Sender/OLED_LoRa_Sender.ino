@@ -1,8 +1,6 @@
 #include <SPI.h>
 #include <LoRa.h>
-#include <Wire.h>  
-//#include "SSD1306.h" 
-//#include "images.h"
+#include <Wire.h>
 
 #define SCK     5    // GPIO5  -- SX1278's SCK
 #define MISO    19   // GPIO19 -- SX1278's MISnO
@@ -14,63 +12,38 @@
 
 unsigned int counter = 0;
 
-//SSD1306 display(0x3c, 21, 22);
 String rssi = "RSSI --";
 String packSize = "--";
 String packet ;
 
- 
-
 void setup() {
-  pinMode(16,OUTPUT);
-  pinMode(2,OUTPUT);
-  
+  pinMode(16, OUTPUT);
+  pinMode(2, OUTPUT);
+
   digitalWrite(16, LOW);    // set GPIO16 low to reset OLED
-  delay(50); 
+  delay(50);
   digitalWrite(16, HIGH); // while OLED is running, must set GPIO16 in high
-  
+
   Serial.begin(115200);
   while (!Serial);
   Serial.println();
   Serial.println("LoRa Sender Test");
-  
-  SPI.begin(SCK,MISO,MOSI,SS);
-  LoRa.setPins(SS,RST,DI0);
+
+  SPI.begin(SCK, MISO, MOSI, SS);
+  LoRa.setPins(SS, RST, DI0);
   if (!LoRa.begin(868E6)) {
     Serial.println("Starting LoRa failed!");
     while (1);
   }
   //LoRa.onReceive(cbk);
-//  LoRa.receive();
+  //LoRa.receive();
   Serial.println("init ok");
-//  display.init();
-//  display.flipScreenVertically();  
-//  display.setFont(ArialMT_Plain_10);
-   
-  
-//    display.clear();
-//  display.setTextAlignment(TEXT_ALIGN_CENTER);
-//  display.setFont(ArialMT_Plain_24);
-//  display.drawString(64 , 0 , "Proto G");
-//  display.drawString(64 , 20 , "Transmitter");
-//  display.drawString(64 , 40 , "Ready!");
-//  display.display();
-
-//  delay(1500);
 }
 
 void loop() {
-//  display.clear();
-//  display.setTextAlignment(TEXT_ALIGN_CENTER);
-//  display.setFont(ArialMT_Plain_24);
-//  
-//  display.drawString(64, 0, "Sending");
-//  display.drawString(64, 20, "Packet ");
-//  display.drawString(64, 40, String(counter));
   Serial.println(String(counter));
-//  display.display();
 
-  // send packet
+  //send packet
   LoRa.beginPacket();
   LoRa.print("Packet ");
   LoRa.print(counter);
