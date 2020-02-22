@@ -17,9 +17,9 @@ String rssi = "RSSI --";
 String packSize = "--";
 String packet;
 //WiFi
-const char* ssid     = "<replace with SSID>";
-const char* password = "<replace with passphrase>";
-const char* mqttServer = "<replace with IP or domain>";
+const char* ssid     = "";
+const char* password = "";
+const char* mqttServer = "";
 const char* waterTankLevelTopic = "water-tank/level";
 
 WiFiClient espClient;
@@ -41,7 +41,6 @@ void initWiFi() {
 
 void initMqtt() {
   client.setServer(mqttServer, 1883);
-  //  client.setCallback(callback);
 }
 
 void reconnect() {
