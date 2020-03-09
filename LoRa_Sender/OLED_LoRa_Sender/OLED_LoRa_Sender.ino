@@ -37,8 +37,7 @@ void setup() {
 
 float getBatteryVoltage() {
   // we've set 10-bit ADC resolution 2^10=1024 and voltage divider makes it half of maximum readable value (which is 3.3V)
-  float batteryVoltage = analogRead(BATTERY_PIN) * 2.0 * (3.3 / 1024.0);
-  return batteryVoltage;
+  return analogRead(BATTERY_PIN) * (3.3 / 1024.0);
 }
 
 void loop() {
@@ -52,6 +51,10 @@ void loop() {
   LoRa.print(",");
   LoRa.print(batteryVoltage);
   LoRa.endPacket();
-  waterLevel++;
+  if (waterLevel == 400) {
+    waterLevel = 0;
+  } else {
+    waterLevel += 20;
+  }
   delay(2000);
 }
