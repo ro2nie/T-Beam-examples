@@ -13,13 +13,13 @@
 #define BAND    868E6
 
 //LoRa
-String rssi = "RSSI --";
-String packSize = "--";
-String packet;
+int rssi = 0;
+String packSize = "--"; //TODO - remove usage of strings. Make it into char[]
+char packet[12]; // TODO - check number of chars sent from sensor
 //WiFi
-const char* ssid     = "";
-const char* password = "";
-const char* mqttServer = "";
+const char* ssid     = "<fill in>";
+const char* password = "<fill in>";
+const char* mqttServer = "<fill in>";
 const char* waterTankLevelTopic = "water-tank/level";
 
 WiFiClient espClient;
@@ -64,22 +64,39 @@ void reconnect() {
 }
 
 void loraData() {
-  Serial.print(packSize + " bytes");
-  Serial.print(" - ");
-  Serial.print(packet);
-  Serial.print(" -- ");
-  Serial.println(rssi);
-  client.publish(waterTankLevelTopic, packet.c_str());
-  //  return packet
+  //  Serial.print(packSize + " bytes");
+  //  Serial.print(" - ");
+  //  Serial.print(packet);
+  char* waterLevel;
+  char* batteryVoltage;
+  char* group = strtok(packet, ",");
+
+  if (group) {
+    waterLevel = group;
+    //printf("%s\n", group);
+  }
+  group = strtok(NULL, ",");
+
+  if (group) {
+    batteryVoltage = group;
+    //printf("%s\n", group);
+  }
+  //{"tank":96,"volts":6, "rssi":-80}   //TODO, add id for identifier. Doorbell will use LoRa
+  char waterTankMessage[50];
+  sprintf(waterTankMessage, "%s%s%s%s%s%d%s", "{\"tank\":", waterLevel, ",\"volts\":", batteryVoltage, ",\"rssi\":", rssi, "}");
+  //  Serial.println("TO PUBLISH TO MQTT");
+  //  Serial.println(waterTankMessage);
+  client.publish(waterTankLevelTopic, waterTankMessage);
 }
 
 void cbk(int packetSize) {
-  packet = "";
+  //  Serial.println(packetSize);
+  packet[0] = '\0';
   packSize = String(packetSize, DEC);
   for (int i = 0; i < packetSize; i++) {
-    packet += (char) LoRa.read();
+    packet[i] = (char) LoRa.read();
   }
-  rssi = "RSSI " + String(LoRa.packetRssi(), DEC) ;
+  rssi = LoRa.packetRssi();
   loraData();
 }
 
