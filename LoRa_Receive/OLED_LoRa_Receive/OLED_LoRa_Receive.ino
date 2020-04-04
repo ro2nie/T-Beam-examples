@@ -14,20 +14,22 @@
 
 //LoRa
 int rssi = 0;
-String packSize = "--"; //TODO - remove usage of strings. Make it into char[]
-char packet[12]; // TODO - check number of chars sent from sensor
+char packet[6];
+//String packSize = "--"; //TODO - remove usage of strings. Make it into char[]
 //WiFi
 const char* ssid     = "<fill in>";
 const char* password = "<fill in>";
 const char* mqttServer = "<fill in>";
 const char* waterTankLevelTopic = "water-tank/level";
+unsigned int sequence = 0;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 void initWiFi() {
   // Start by connecting to a WiFi network
-  Serial.println("Connecting to: " + String(ssid));
+  Serial.print("Connecting to: ");
+  Serial.println(ssid);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
@@ -67,35 +69,49 @@ void loraData() {
   //  Serial.print(packSize + " bytes");
   //  Serial.print(" - ");
   //  Serial.print(packet);
+  char* identifier;
   char* waterLevel;
-  char* batteryVoltage;
   char* group = strtok(packet, ",");
 
   if (group) {
-    waterLevel = group;
+    identifier = group;
     //printf("%s\n", group);
   }
   group = strtok(NULL, ",");
 
   if (group) {
-    batteryVoltage = group;
+    waterLevel = group;
     //printf("%s\n", group);
   }
-  //{"tank":96,"volts":6, "rssi":-80}   //TODO, add id for identifier. Doorbell will use LoRa
-  char waterTankMessage[50];
-  sprintf(waterTankMessage, "%s%s%s%s%s%d%s", "{\"tank\":", waterLevel, ",\"volts\":", batteryVoltage, ",\"rssi\":", rssi, "}");
-  //  Serial.println("TO PUBLISH TO MQTT");
-  //  Serial.println(waterTankMessage);
-  client.publish(waterTankLevelTopic, waterTankMessage);
+
+  //Sequence used for OpenHab to know if a change has not been detected in a while, to trigger, change battery telegram alert.
+  sequence += 1;
+  if (sequence > 100) {
+    sequence = 0;
+  }
+  //{"id": "wt", "sequence": 1, "tank":96, "rssi":-80}   //id for identifier. Doorbell will use LoRa too
+  
+  if(strcmp(identifier, "wt") == 0) {
+    //Water tank
+    char waterTankMessage[60];
+    sprintf(waterTankMessage, "%s%d%s%s%s%d%s", "{\"sequence\":", sequence, ",\"tank\":", waterLevel, ",\"rssi\":", rssi, "}");
+    Serial.println(waterTankMessage);
+    client.publish(waterTankLevelTopic, waterTankMessage);
+  } else if (strcmp(identifier, "db") == 0) {
+    //Door bell
+    //TODO
+  }
 }
 
 void cbk(int packetSize) {
-  //  Serial.println(packetSize);
-  packet[0] = '\0';
-  packSize = String(packetSize, DEC);
+  //Clear packet of all previously held values
+  memset(&packet[0], 0, sizeof(packet));
+  //  packSize = String(packetSize, DEC);
   for (int i = 0; i < packetSize; i++) {
     packet[i] = (char) LoRa.read();
   }
+  //  Serial.print("packet ");
+  //  Serial.println(packet);
   rssi = LoRa.packetRssi();
   loraData();
 }
@@ -129,6 +145,7 @@ void loop() {
 
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
+    //    Serial.println(packetSize);
     cbk(packetSize);
   }
   delay(10);
