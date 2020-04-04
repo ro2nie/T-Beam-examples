@@ -10,15 +10,12 @@
 #define RST     14   // GPIO14 -- SX1278's RESET
 #define DI0     26   // GPIO26 -- SX1278's IRQ(Interrupt Request)
 #define BAND  868E6
-#define BATTERY_PIN 35 // battery level measurement pin, here is the voltage divider connected
+char identifier[3] = "wt"; //For water tank. Helps disambiguate from other Lora senders
 unsigned int waterLevel = 0;
 
 void setup() {
   pinMode(16, OUTPUT);
   pinMode(2, OUTPUT);
-  // set battery measurement pin
-  adcAttachPin(BATTERY_PIN);
-  adcStart(BATTERY_PIN);
   analogReadResolution(10); // Default of 12 is not very linear. Recommended to use 10 or 11 depending on needed resolution.
 
   Serial.begin(115200);
@@ -35,21 +32,15 @@ void setup() {
   Serial.println("init ok");
 }
 
-float getBatteryVoltage() {
-  // we've set 10-bit ADC resolution 2^10=1024 and voltage divider makes it half of maximum readable value (which is 3.3V)
-  return analogRead(BATTERY_PIN) * (3.3 / 1024.0);
-}
-
 void loop() {
-  float batteryVoltage = getBatteryVoltage();
-  Serial.print(String(waterLevel));
+  Serial.print(identifier);
   Serial.print(",");
-  Serial.println(String(batteryVoltage));
-  //Comma <separated water level>,<battery voltage>
+  Serial.println(waterLevel);
+  //Comma <identifier>,<water level>
   LoRa.beginPacket();
-  LoRa.print(waterLevel);
+  LoRa.print(identifier);
   LoRa.print(",");
-  LoRa.print(batteryVoltage);
+  LoRa.print(waterLevel);
   LoRa.endPacket();
   if (waterLevel == 400) {
     waterLevel = 0;
