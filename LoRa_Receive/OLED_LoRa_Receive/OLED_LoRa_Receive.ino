@@ -14,8 +14,6 @@
 
 //LoRa
 int rssi = 0;
-char packet[6];
-//String packSize = "--"; //TODO - remove usage of strings. Make it into char[]
 //WiFi
 const char* ssid     = "<fill in>";
 const char* password = "<fill in>";
@@ -65,9 +63,7 @@ void reconnect() {
   }
 }
 
-void loraData() {
-  //  Serial.print(packSize + " bytes");
-  //  Serial.print(" - ");
+void loraData(char packet[]) {
   //  Serial.print(packet);
   char* identifier;
   char* waterLevel;
@@ -75,13 +71,13 @@ void loraData() {
 
   if (group) {
     identifier = group;
-    //printf("%s\n", group);
+    //    printf("%s\n", group);
   }
   group = strtok(NULL, ",");
 
   if (group) {
     waterLevel = group;
-    //printf("%s\n", group);
+    //    printf("%s\n", group);
   }
 
   //Sequence used for OpenHab to know if a change has not been detected in a while, to trigger, change battery telegram alert.
@@ -90,8 +86,8 @@ void loraData() {
     sequence = 0;
   }
   //{"id": "wt", "sequence": 1, "tank":96, "rssi":-80}   //id for identifier. Doorbell will use LoRa too
-  
-  if(strcmp(identifier, "wt") == 0) {
+
+  if (strcmp(identifier, "wt") == 0) {
     //Water tank
     char waterTankMessage[60];
     sprintf(waterTankMessage, "%s%d%s%s%s%d%s", "{\"sequence\":", sequence, ",\"tank\":", waterLevel, ",\"rssi\":", rssi, "}");
@@ -104,16 +100,18 @@ void loraData() {
 }
 
 void cbk(int packetSize) {
+  //  Serial.print(packetSize);
+  char packet[packetSize];
   //Clear packet of all previously held values
-  memset(&packet[0], 0, sizeof(packet));
-  //  packSize = String(packetSize, DEC);
+  //Serial.print("packet size " + String(packetSize, DEC));
   for (int i = 0; i < packetSize; i++) {
     packet[i] = (char) LoRa.read();
   }
-  //  Serial.print("packet ");
-  //  Serial.println(packet);
+  //https://forum.arduino.cc/index.php?topic=537386.0
+  //terminate array
+  packet[packetSize] = '\0';
   rssi = LoRa.packetRssi();
-  loraData();
+  loraData(packet);
 }
 
 void setup() {
